@@ -1,16 +1,18 @@
 import { Resend } from "resend";
 import { money } from "./pricing";
 
-// Where the org's copy of every registration goes. Overridable via env.
-const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "pop@prostatecheckup.com";
-// "From" must be an address on a domain verified in Resend. Until the
-// prostatecheckup.com domain is verified, Resend's onboarding@resend.dev works.
-const EMAIL_FROM =
-  process.env.EMAIL_FROM || "POP Walk <onboarding@resend.dev>";
+// Vercel's Resend integration exposes the key as Messaging_RESEND_API_KEY; also
+// accept a plain RESEND_API_KEY if set manually.
+const RESEND_API_KEY = process.env.RESEND_API_KEY || process.env.Messaging_RESEND_API_KEY;
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+// Where the org's copy of every registration goes. Overridable via env.
+export const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "pop@prostatecheckup.com";
+// "From" must be an address on a domain VERIFIED in Resend. Set EMAIL_FROM in
+// Vercel to override. Default targets the org's website domain once verified.
+export const EMAIL_FROM =
+  process.env.EMAIL_FROM || "Walk for POP <walk@prostateonsiteproject.org>";
+
+export const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 export type RegistrationEmailData = {
   firstName: string;

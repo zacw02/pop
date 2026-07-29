@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
+import { resend, NOTIFY_EMAIL, EMAIL_FROM } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
-
-const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "pop@prostatecheckup.com";
-const EMAIL_FROM = process.env.EMAIL_FROM || "POP Walk <onboarding@resend.dev>";
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
