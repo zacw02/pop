@@ -1,0 +1,56 @@
+// Prisma schema for the POP Walk registration site.
+// Data store: Neon (serverless Postgres). Set DATABASE_URL in .env.local / Vercel.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id           String         @id @default(cuid())
+  name         String         @unique
+  captainName  String?
+  captainPhone String?
+  teamEmail    String?
+  goal         Float          @default(500)
+  createdAt    DateTime       @default(now())
+  registrations Registration[]
+}
+
+model Registration {
+  id            String   @id @default(cuid())
+  // Participant
+  firstName     String
+  lastName      String
+  email         String
+  phone         String?
+  age           Int?
+  shirtSize     String   @default("L")
+  isSurvivor    Boolean  @default(false)
+  // Registration shape: "individual" | "join" | "start"
+  registrationType String @default("individual")
+  // Counts (a single registration can cover a family/group)
+  numAdults     Int      @default(1)
+  numChildren   Int      @default(0)
+  sleepingIn    Boolean  @default(false) // "I can't walk, I'm sleeping in"
+  shipTee       Boolean  @default(false) // +$5 to ship the tee shirt
+  donation      Float    @default(0)
+  // Mailing address (optional)
+  mailingStreet String?
+  mailingCity   String?
+  mailingState  String?
+  mailingZip    String?
+  // Money
+  totalAmount   Float    @default(0)
+  paid          Boolean  @default(false)
+  paymentMethod String   @default("event") // "paypal" | "event"
+  paypalOrderId String?
+  // Team link
+  team          Team?    @relation(fields: [teamId], references: [id])
+  teamId        String?
+  createdAt     DateTime @default(now())
+}

@@ -1,0 +1,30 @@
+{
+  "name": "pop-website",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "logo": "node scripts/make-logo-transparent.mjs"
+  },
+  "dependencies": {
+    "@paypal/react-paypal-js": "^8.8.3",
+    "@prisma/client": "^6.13.0",
+    "next": "15.4.5",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "resend": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "jimp": "^1.6.0",
+    "prisma": "^6.13.0",
+    "typescript": "^5.7.3"
+  }
+}
