@@ -157,10 +157,13 @@ export async function sendRegistrationEmails(d: RegistrationEmailData): Promise<
     }),
   ]);
 
-  const norm = (r: PromiseSettledResult<unknown>): SendResult =>
-    r.status === "fulfilled"
-      ? { ok: true }
-      : { ok: false, error: String((r as PromiseRejectedResult).reason) };
+  // The Resend SDK resolves with an { error } payload instead of throwing, so a
+  // fulfilled promise is NOT necessarily a sent email — check the error field.
+  const norm = (r: PromiseSettledResult<{ error?: { message?: string } | null }>): SendResult => {
+    if (r.status !== "fulfilled") return { ok: false, error: String(r.reason) };
+    if (r.value?.error) return { ok: false, error: r.value.error.message || "send failed" };
+    return { ok: true };
+  };
 
   return { participant: norm(participant), org: norm(org) };
 }
