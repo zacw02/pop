@@ -99,6 +99,8 @@ export default function Walk() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p.email)) return "Please enter a valid email address.";
     if (regType === "join" && !p.teamName) return "Please choose a team to join.";
     if (regType === "start" && !p.teamName) return "Please name your team.";
+    if (p.shipTee && !(p.mailingStreet && p.mailingCity && p.mailingState && p.mailingZip))
+      return "Please add your mailing address (street, city, state, and ZIP) so we can ship your t-shirt.";
     return null;
   }, [regType]);
 
@@ -270,14 +272,21 @@ export default function Walk() {
                   </div>
                 </div>
 
-                {/* Mailing address */}
+                {/* Mailing address — required when the shirt is being mailed */}
                 <div style={{ marginBottom: 14 }}>
-                  <Label>Mailing address (optional)</Label>
-                  <input value={form.mailingStreet} onChange={(e) => setField("mailingStreet", e.target.value)} placeholder="Street" style={{ ...inputStyle, marginBottom: 8 }} />
+                  <Label>
+                    Mailing address{" "}
+                    {effectiveShip ? (
+                      <span style={{ color: "#c0392b" }}>— required, we&apos;ll mail your shirt here</span>
+                    ) : (
+                      <span style={{ color: "#9aa6b0", fontWeight: 500 }}>(optional)</span>
+                    )}
+                  </Label>
+                  <input value={form.mailingStreet} onChange={(e) => setField("mailingStreet", e.target.value)} placeholder="Street" style={{ ...inputStyle, marginBottom: 8, ...(effectiveShip && !form.mailingStreet.trim() ? reqBorder : {}) }} />
                   <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
-                    <input value={form.mailingCity} onChange={(e) => setField("mailingCity", e.target.value)} placeholder="City" style={inputStyle} />
-                    <input value={form.mailingState} onChange={(e) => setField("mailingState", e.target.value)} placeholder="State" style={inputStyle} />
-                    <input value={form.mailingZip} onChange={(e) => setField("mailingZip", e.target.value)} placeholder="Zip" style={inputStyle} />
+                    <input value={form.mailingCity} onChange={(e) => setField("mailingCity", e.target.value)} placeholder="City" style={{ ...inputStyle, ...(effectiveShip && !form.mailingCity.trim() ? reqBorder : {}) }} />
+                    <input value={form.mailingState} onChange={(e) => setField("mailingState", e.target.value)} placeholder="State" style={{ ...inputStyle, ...(effectiveShip && !form.mailingState.trim() ? reqBorder : {}) }} />
+                    <input value={form.mailingZip} onChange={(e) => setField("mailingZip", e.target.value)} placeholder="Zip" style={{ ...inputStyle, ...(effectiveShip && !form.mailingZip.trim() ? reqBorder : {}) }} />
                   </div>
                 </div>
 
@@ -416,6 +425,8 @@ export default function Walk() {
 
 /* --- little presentational helpers --- */
 const inputStyle: React.CSSProperties = { width: "100%", padding: "12px 13px", border: "1px solid #d8dde2", borderRadius: 10, fontSize: 15 };
+// Highlight for address fields that are required (shirt is being mailed) but empty.
+const reqBorder: React.CSSProperties = { borderColor: "#e0a3a3", background: "#fdf6f6" };
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label style={{ fontSize: 13, fontWeight: 700, color: "#425263", display: "block", marginBottom: 6 }}>{children}</label>;

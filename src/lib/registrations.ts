@@ -61,6 +61,19 @@ export function parseRegistration(body: Record<string, unknown>): ParsedRegistra
     throw new RegistrationError("Please choose a team to join.");
   }
 
+  const mailingStreet = optStr(body.mailingStreet);
+  const mailingCity = optStr(body.mailingCity);
+  const mailingState = optStr(body.mailingState);
+  const mailingZip = optStr(body.mailingZip);
+
+  // If the shirt is being mailed (ship option, or "sleeping in"), we MUST have a
+  // full address to send it to.
+  if (shipTee && !(mailingStreet && mailingCity && mailingState && mailingZip)) {
+    throw new RegistrationError(
+      "Please enter your full mailing address (street, city, state, and ZIP) so we can ship your t-shirt."
+    );
+  }
+
   const total = computeTotal({ numAdults, numChildren, shipTee, donation });
 
   return {
@@ -79,10 +92,10 @@ export function parseRegistration(body: Record<string, unknown>): ParsedRegistra
     sleepingIn,
     shipTee,
     donation,
-    mailingStreet: optStr(body.mailingStreet),
-    mailingCity: optStr(body.mailingCity),
-    mailingState: optStr(body.mailingState),
-    mailingZip: optStr(body.mailingZip),
+    mailingStreet,
+    mailingCity,
+    mailingState,
+    mailingZip,
     total,
   };
 }
