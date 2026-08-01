@@ -23,6 +23,9 @@ h1, h2, h3, h4 {
   color: #16283a;
 }
 input, select, button, textarea { font-family: inherit; }
+/* Inputs default to a ~180px intrinsic min-width, which forces multi-column
+   form rows to overflow narrow screens. Let them shrink to their grid cell. */
+input, select, textarea { min-width: 0; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #1c78c0 !important;
@@ -43,9 +46,13 @@ input:focus, select:focus, textarea:focus {
 
 .mobile-toggle { display: none; }
 
+/* Let grid children shrink below their content's intrinsic width instead of
+   forcing the grid (and the page) wider than the viewport. */
+.walk-grid > *, .two-col > * { min-width: 0; }
+
 @media (max-width: 920px) {
   .navlinks { display: none !important; }
-  .herogrid, .two-col, .walk-grid { grid-template-columns: 1fr !important; }
+  .herogrid, .two-col, .walk-grid { grid-template-columns: minmax(0, 1fr) !important; }
   .cards-3 { grid-template-columns: 1fr 1fr !important; }
   .brandword { display: block !important; }
   .mobile-toggle { display: inline-flex !important; }
@@ -55,4 +62,5 @@ input:focus, select:focus, textarea:focus {
   .cards-3 { grid-template-columns: 1fr !important; }
   .type-row { grid-template-columns: 1fr !important; }
   .count-row { grid-template-columns: 1fr !important; }
+  .mini-cards { grid-template-columns: 1fr !important; }
 }

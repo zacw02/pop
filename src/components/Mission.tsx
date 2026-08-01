@@ -27,7 +27,7 @@ export default function Mission() {
             workplaces, health fairs, and community events — and helping reduce out-of-pocket costs for uninsured and
             under-insured men.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+          <div className="mini-cards" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
             {cards.map(([title, sub]) => (
               <div key={title} style={{ background: "#fff", border: "1px solid #eae6dc", borderRadius: 14, padding: 18 }}>
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 26, color: "#16283a" }}>{title}</div>
