@@ -8,3 +8,7 @@ out
 .DS_Store
 next-env.d.ts
 /prisma/dev.db
+
+# stray setup output (contains secrets)
+neon-create.json
+*.output
