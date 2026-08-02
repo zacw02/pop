@@ -37,6 +37,10 @@ export default function Walk() {
   const [sleepingIn, setSleepingIn] = useState(false);
   const [shipTee, setShipTee] = useState(false);
 
+  // Names (+ adult shirt sizes) of the other people in this registration.
+  const [extraAdults, setExtraAdults] = useState<{ firstName: string; lastName: string; shirtSize: string }[]>([]);
+  const [children, setChildren] = useState<{ firstName: string; lastName: string; shirtSize: string }[]>([]);
+
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [stats, setStats] = useState<Stats>({ participants: 0, raised: 0 });
   const [success, setSuccess] = useState<null | { firstName: string; summary: string; total: number; paid: boolean }>(null);
@@ -64,13 +68,34 @@ export default function Walk() {
     loadTeams();
   }, [loadTeams]);
 
+  // Keep the additional-adult rows in sync with the adult count (minus the
+  // registrant, who is adult #1), preserving anything already typed.
+  useEffect(() => {
+    const need = Math.max(0, form.numAdults - 1);
+    setExtraAdults((prev) => {
+      if (prev.length === need) return prev;
+      const next = prev.slice(0, need);
+      while (next.length < need) next.push({ firstName: "", lastName: "", shirtSize: "L" });
+      return next;
+    });
+  }, [form.numAdults]);
+
+  useEffect(() => {
+    const need = Math.max(0, form.numChildren);
+    setChildren((prev) => {
+      if (prev.length === need) return prev;
+      const next = prev.slice(0, need);
+      while (next.length < need) next.push({ firstName: "", lastName: "", shirtSize: "S" });
+      return next;
+    });
+  }, [form.numChildren]);
+
   const buildPayload = useCallback(() => {
     return {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      age: form.age,
       shirtSize: shirt,
       isSurvivor,
       registrationType: regType,
@@ -78,6 +103,10 @@ export default function Walk() {
       teamGoal: form.teamGoal,
       numAdults: form.numAdults,
       numChildren: form.numChildren,
+      additionalRegistrants: [
+        ...extraAdults.map((a) => ({ type: "adult" as const, firstName: a.firstName.trim(), lastName: a.lastName.trim(), shirtSize: a.shirtSize })),
+        ...children.map((c) => ({ type: "child" as const, firstName: c.firstName.trim(), lastName: c.lastName.trim(), shirtSize: c.shirtSize })),
+      ],
       sleepingIn,
       shipTee: effectiveShip,
       donation: form.donation,
@@ -86,7 +115,7 @@ export default function Walk() {
       mailingState: form.mailingState.trim(),
       mailingZip: form.mailingZip.trim(),
     };
-  }, [form, shirt, isSurvivor, regType, sleepingIn, effectiveShip]);
+  }, [form, shirt, isSurvivor, regType, sleepingIn, effectiveShip, extraAdults, children]);
 
   // Keep the latest payload in a ref so PayPal's createOrder always reads
   // current values without re-rendering the buttons on every keystroke.
@@ -101,6 +130,8 @@ export default function Walk() {
     if (regType === "start" && !p.teamName) return "Please name your team.";
     if (p.shipTee && !(p.mailingStreet && p.mailingCity && p.mailingState && p.mailingZip))
       return "Please add your mailing address (street, city, state, and ZIP) so we can ship your t-shirt.";
+    if (p.additionalRegistrants.some((r) => !r.firstName || !r.lastName))
+      return "Please enter the first and last name of everyone in your group.";
     return null;
   }, [regType]);
 
@@ -147,6 +178,8 @@ export default function Walk() {
     setIsSurvivor(false);
     setSleepingIn(false);
     setShipTee(false);
+    setExtraAdults([]);
+    setChildren([]);
   }
 
   const setField = (k: keyof typeof emptyForm, v: string | number) => setForm((f) => ({ ...f, [k]: v }));
@@ -256,8 +289,8 @@ export default function Walk() {
                   </div>
                 </div>
 
-                {/* Counts + age */}
-                <div className="count-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+                {/* Counts */}
+                <div className="count-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
                   <div>
                     <Label>Adults (12 &amp; over)</Label>
                     <input value={form.numAdults} onChange={(e) => numField("numAdults", e.target.value, 1)} type="number" min={1} style={inputStyle} />
@@ -266,11 +299,41 @@ export default function Walk() {
                     <Label>Children (under 12)</Label>
                     <input value={form.numChildren} onChange={(e) => numField("numChildren", e.target.value, 0)} type="number" min={0} style={inputStyle} />
                   </div>
-                  <div>
-                    <Label>Your age</Label>
-                    <input value={form.age} onChange={(e) => setField("age", e.target.value)} type="number" min={0} placeholder="—" style={inputStyle} />
-                  </div>
                 </div>
+
+                {/* Everyone else in the group — names for all, shirt sizes for adults */}
+                {(extraAdults.length > 0 || children.length > 0) && (
+                  <div style={{ background: "#f6f8fb", border: "1px solid #e8edf2", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#16283a", marginBottom: 4 }}>Who else is coming?</div>
+                    <p style={{ fontSize: 12.5, color: "#6b7885", marginBottom: 12 }}>
+                      You&apos;re registrant #1. Add each additional person&apos;s name and t-shirt size.
+                    </p>
+                    {extraAdults.map((a, i) => (
+                      <div key={"a" + i} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#425263", marginBottom: 5 }}>Adult {i + 2}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 84px", gap: 8 }}>
+                          <input placeholder="First name" value={a.firstName} onChange={(e) => setExtraAdults((prev) => prev.map((x, idx) => (idx === i ? { ...x, firstName: e.target.value } : x)))} style={inputStyle} />
+                          <input placeholder="Last name" value={a.lastName} onChange={(e) => setExtraAdults((prev) => prev.map((x, idx) => (idx === i ? { ...x, lastName: e.target.value } : x)))} style={inputStyle} />
+                          <select value={a.shirtSize} onChange={(e) => setExtraAdults((prev) => prev.map((x, idx) => (idx === i ? { ...x, shirtSize: e.target.value } : x)))} style={{ ...inputStyle, padding: "12px 6px" }} aria-label={`Adult ${i + 2} t-shirt size`}>
+                            {SHIRT_SIZES.map((sz) => (<option key={sz} value={sz}>{sz}</option>))}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                    {children.map((c, i) => (
+                      <div key={"c" + i} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#425263", marginBottom: 5 }}>Child {i + 1}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 84px", gap: 8 }}>
+                          <input placeholder="First name" value={c.firstName} onChange={(e) => setChildren((prev) => prev.map((x, idx) => (idx === i ? { ...x, firstName: e.target.value } : x)))} style={inputStyle} />
+                          <input placeholder="Last name" value={c.lastName} onChange={(e) => setChildren((prev) => prev.map((x, idx) => (idx === i ? { ...x, lastName: e.target.value } : x)))} style={inputStyle} />
+                          <select value={c.shirtSize} onChange={(e) => setChildren((prev) => prev.map((x, idx) => (idx === i ? { ...x, shirtSize: e.target.value } : x)))} style={{ ...inputStyle, padding: "12px 6px" }} aria-label={`Child ${i + 1} t-shirt size`}>
+                            {SHIRT_SIZES.map((sz) => (<option key={sz} value={sz}>{sz}</option>))}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Mailing address — required when the shirt is being mailed */}
                 <div style={{ marginBottom: 14 }}>

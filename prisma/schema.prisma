@@ -36,6 +36,9 @@ model Registration {
   // Counts (a single registration can cover a family/group)
   numAdults     Int      @default(1)
   numChildren   Int      @default(0)
+  // Names (and adult shirt sizes) of the other people covered by this
+  // registration: [{ type: "adult"|"child", firstName, lastName, shirtSize? }]
+  additionalRegistrants Json?
   sleepingIn    Boolean  @default(false) // "I can't walk, I'm sleeping in"
   shipTee       Boolean  @default(false) // +$5 to ship the tee shirt
   donation      Float    @default(0)

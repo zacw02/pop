@@ -2,6 +2,13 @@ import { prisma } from "./prisma";
 import { computeTotal } from "./pricing";
 import type { RegistrationEmailData } from "./email";
 
+export type AdditionalRegistrant = {
+  type: "adult" | "child";
+  firstName: string;
+  lastName: string;
+  shirtSize: string | null; // adults have a shirt size; children do not
+};
+
 // Normalized, server-validated registration payload.
 export type ParsedRegistration = {
   firstName: string;
@@ -10,6 +17,7 @@ export type ParsedRegistration = {
   phone: string | null;
   age: number | null;
   shirtSize: string;
+  additionalRegistrants: AdditionalRegistrant[];
   isSurvivor: boolean;
   registrationType: "individual" | "join" | "start";
   teamName: string | null; // team to join, or new team name
@@ -74,6 +82,28 @@ export function parseRegistration(body: Record<string, unknown>): ParsedRegistra
     );
   }
 
+  // Names of everyone else covered by this registration. Adults carry a shirt
+  // size; children are name-only. Every participant must have a name.
+  const rawExtras = Array.isArray(body.additionalRegistrants) ? body.additionalRegistrants : [];
+  const additionalRegistrants: AdditionalRegistrant[] = rawExtras.map((e) => {
+    const rec = e && typeof e === "object" ? (e as Record<string, unknown>) : {};
+    const type: "adult" | "child" = rec.type === "child" ? "child" : "adult";
+    return {
+      type,
+      firstName: str(rec.firstName),
+      lastName: str(rec.lastName),
+      shirtSize: str(rec.shirtSize) || (type === "child" ? "S" : "L"),
+    };
+  });
+  if (additionalRegistrants.some((r) => !r.firstName || !r.lastName)) {
+    throw new RegistrationError("Please enter the first and last name of every participant.");
+  }
+  const gotAdults = additionalRegistrants.filter((r) => r.type === "adult").length;
+  const gotChildren = additionalRegistrants.filter((r) => r.type === "child").length;
+  if (gotAdults !== Math.max(0, numAdults - 1) || gotChildren !== numChildren) {
+    throw new RegistrationError("Please enter the name of every adult and child in your group.");
+  }
+
   const total = computeTotal({ numAdults, numChildren, shipTee, donation });
 
   return {
@@ -83,6 +113,7 @@ export function parseRegistration(body: Record<string, unknown>): ParsedRegistra
     phone: optStr(body.phone),
     age: body.age != null && str(body.age) !== "" ? Math.max(0, Math.floor(num(body.age, 0))) : null,
     shirtSize: str(body.shirtSize) || "L",
+    additionalRegistrants,
     isSurvivor: bool(body.isSurvivor),
     registrationType,
     teamName,
@@ -145,6 +176,7 @@ export async function persistRegistration(
       registrationType: p.registrationType,
       numAdults: p.numAdults,
       numChildren: p.numChildren,
+      additionalRegistrants: p.additionalRegistrants.length ? p.additionalRegistrants : undefined,
       sleepingIn: p.sleepingIn,
       shipTee: p.shipTee,
       donation: p.donation,
@@ -170,6 +202,7 @@ export async function persistRegistration(
     isSurvivor: p.isSurvivor,
     registrationType: p.registrationType,
     teamName,
+    additionalRegistrants: p.additionalRegistrants,
     numAdults: p.numAdults,
     numChildren: p.numChildren,
     sleepingIn: p.sleepingIn,

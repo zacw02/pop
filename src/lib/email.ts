@@ -26,6 +26,7 @@ export type RegistrationEmailData = {
   teamName?: string | null;
   numAdults: number;
   numChildren: number;
+  additionalRegistrants?: { type: "adult" | "child"; firstName: string; lastName: string; shirtSize: string | null }[];
   sleepingIn: boolean;
   shipTee: boolean;
   donation: number;
@@ -54,7 +55,16 @@ function rows(d: RegistrationEmailData): [string, string][] {
   if (d.teamName) r.push(["Team / Family", d.teamName]);
   r.push(["Adults (12 & over)", String(d.numAdults)]);
   if (d.numChildren > 0) r.push(["Children (under 12)", String(d.numChildren)]);
-  r.push(["T-shirt size", d.shirtSize]);
+  r.push([d.numAdults > 1 || d.numChildren > 0 ? "Registrant t-shirt" : "T-shirt size", d.shirtSize]);
+  const extras = d.additionalRegistrants || [];
+  extras
+    .filter((x) => x.type === "adult")
+    .forEach((a, i) =>
+      r.push([`Adult ${i + 2}`, `${a.firstName} ${a.lastName}${a.shirtSize ? ` — shirt ${a.shirtSize}` : ""}`])
+    );
+  extras
+    .filter((x) => x.type === "child")
+    .forEach((c, i) => r.push([`Child ${i + 1}`, `${c.firstName} ${c.lastName}${c.shirtSize ? ` — shirt ${c.shirtSize}` : ""}`]));
   if (d.isSurvivor) r.push(["Prostate cancer survivor", "Yes"]);
   if (d.sleepingIn) r.push(["Sleeping in", "Yes — tee shirt to be mailed"]);
   if (d.shipTee) r.push(["Ship tee shirt (+$5)", "Yes"]);
